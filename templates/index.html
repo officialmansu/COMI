@@ -1,0 +1,235 @@
+{% load static %}
+
+<html>
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>SSH Terminal</title>
+    <link rel="stylesheet" href="{% static 'node_modules/xterm/dist/xterm.css' %}"/>
+    <script src="{%  static  'node_modules/xterm/dist/xterm.js'%}"></script>
+    <script src="{%  static  'node_modules/xterm/dist/addons/fit/fit.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.js"></script>
+    <script src="{% static 'js/jquery-ajax.js' %}"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+    <style>
+        @import url("https://fonts.googleapis.com/css?family=Montserrat");
+        body {
+            font-family: helvetica, sans-serif, arial;
+            font-size: 1em;
+            background-color:#212E44;
+            margin: 0;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        #terminal-container {
+            width: 900px;
+            height: 870px;
+            display: inline-block;
+        }
+
+        .function {
+            display: inline-block;
+            float: right;
+        }
+
+        #terminal-container .terminal {
+            background-color: #111;
+            color: #fafafa;
+            padding: 2px;
+        }
+
+        #terminal-container .terminal:focus .terminal-cursor {
+            background-color: #fafafa;
+        }
+
+        .menu-bar-top {
+              background-color:rgb(17, 28, 49);
+              display: inline-block;
+              width:100%;
+              padding:20px 0;
+        }
+
+        #run-button::before {
+            content: "";
+            display: inline-block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 100%;
+            bottom: 0;
+            background: #cecd24;
+            transition: 0.3s 0.2s cubic-bezier(0.1, 0, 0.1, 1), left 0.3s cubic-bezier(0.1, 0, 0.1, 1);
+            z-index: -1;
+        }
+        #run-button::after {
+            content: "";
+            display: inline-block;
+            background-image: url("https://image.flaticon.com/icons/png/128/109/109617.png");
+            position: absolute;
+            top: 0;
+            left: calc(100% - 3em);
+            right: 3em;
+            bottom: 0;
+            background-size: 1.5em;
+            background-repeat: no-repeat;
+            background-position: center;
+            transition: right 0.3s cubic-bezier(0.1, 0, 0.1, 1);
+        }
+        #run-button:hover {
+            padding: 0.5em 3.5em 0.5em 0.5em;
+        }
+        #run-button:hover::before {
+            left: calc(100% - 3em);
+            right: 0;
+            transition: 0.3s cubic-bezier(0.1, 0, 0.1, 1), left 0.3s 0.2s cubic-bezier(0.1, 0, 0.1, 1);
+        }
+        #run-button:hover::after {
+            right: 0;
+            transition: right 0.3s 0.2s cubic-bezier(0.1, 0, 0.1, 1);
+        }
+        #run-button {
+            left: 50%;
+            transform: translate(0, 0);
+            color: #cecd24;
+            text-decoration: none;
+            font-size: 20px;
+            display: inline-block;
+            font-family: Montserrat;
+            text-transform: uppercase;
+            padding: 0.5em 2em;
+            border: 2px solid #cecd24;
+            transition: 0.02s 0.2s cubic-bezier(0.1, 0, 0.1, 1);
+        }
+
+        .buttons {
+            width:100px;
+            display: block;
+        }
+
+    </style>
+  </head>
+  <body>
+    <div class="menu-bar-top" style="text-align:center;">
+        <a href="#" id="run-button">RUN</a><
+    </div>
+    <div id="container" style="height: 100%; width:90vh; display:inline-block"></div>
+    <div id="terminal-container" width="570" height="1407" style="height:700px; width:500px; display:inline-block"></div>
+    <script>
+
+        var term;
+        var socket;
+        window.addEventListener("load", function() {
+            var terminalContainer = document.getElementById("terminal-container");
+            term = new Terminal({ cursorBlink: true });
+            term.on('key', (key, ev) => {
+            if (key.charCodeAt(0) == 13);
+                //term.write('\n');
+                //term.write(key);
+            });
+            term.open(terminalContainer);
+            term.writable = 1;
+
+            if(!socket) {
+                socket = io.connect('localhost:4000');
+                term.write("\r\n--- Connected to backend---\r\n");
+                // Browser -> Backend
+                term.on("data", function (data) {
+                    try {
+                        console.log('browser -> back data : ' + data);
+                    } catch (e) {
+                        alert('brow -> back : ' + e)
+                    }
+                    socket.emit("data", data);
+                });
+                // Backend -> Browser
+                socket.on("data", function (data) {
+                    try {
+                        //alert(data);
+                        if(data === "!@#$%^&*()_+COMI-CLEAR!@#$%^&*()_+");
+                            //term.clear();
+                       console.log('back -> browser data : ' + data);
+
+                    } catch (e) {
+                        alert('back -> brow : ' + e);
+                    }
+                    term.write(data.replace(/\n/gi, '\n\r').replace('root@ubuntu:/joon/ris# ', '>'));
+                });
+
+                socket.on("term-control", function(command){
+                    if(command === "CLEAR TERMINAL") {
+                        term.clear();
+                        alert('!!');
+                    }
+                });
+
+                socket.on("disconnect", function () {
+                    console.log("============== socket disconnect!! ===============" + socket.id);
+                    term.write("\r\n--- Disconnected from backend---\r\n");
+                });
+                //});
+            }
+            console.log('connect io to server');
+
+          }, false
+        );
+        document.getElementById("run-button").addEventListener("click", () => {
+            term.clear();
+
+            getValAxios();
+        });
+      </script>
+
+    <script type="text/javascript" src={% static  'js/loader.js'%}></script>
+    <script src="{%  static  'js/tsWorker.js'%}"></script>
+    <script>
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.18.0/min/vs/' }});
+        var editor;
+        require(["vs/editor/editor.main"], function () {
+            editor = monaco.editor.create(document.getElementById('container'), {
+                value: `#include<iostream> \nusing namespace std;\n\nint main() {\n\tcout << "Hello";\n}`,
+                language: 'c',
+                theme: 'hc-black',
+                automaticLayout: true,
+                fontSize: "16px"
+            });
+        });
+
+
+        function getValAxios() {
+            let srccode = editor.getValue();
+            console.log(srccode);
+            axios.post('http://localhost:4000/source', {
+                code: srccode
+            }).then(res => {
+                //socket.on("connect", function() {
+                if(socket.connected)
+                    console.log("============== socket connect!! ===============");
+
+            }).catch(err => {
+                    alert('catch error !! ' + err);
+                    if(socket && socket.connected){
+                        console.log('socket is aleardy exist !! we will delte(in catch)' + socket.id);
+                        socket.disconnect();
+                    }
+            });
+        }
+
+        /*
+        function getValAxios() {
+            let form = new FormData();
+            let srccode = editor.getValue();
+            form.append('src', srccode);
+            axios.post(`http://localhost:4000/source`, form).then(response => {
+                console.log('response : ', JSON.stringify(response, null, 2))
+            }).catch(error => {
+                console.log('failed', error)
+            });
+        }*/
+    </script>
+  </body>
+</html>
