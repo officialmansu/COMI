@@ -1,6 +1,18 @@
 # COMI
-코딩에 미치다
+---
 
-ver. 0.0.1 
-  main page 작성
-  compile페이지 추가
+## Release Note 
+
+### New features :
+- Maipage(index.html) build
+- Editorpage build
+
+### Feature enhancements :
+- connect client and server with socket.io
+- ssh connection with ssh2.js
+
+### Feature Bugfixes :  
+- null
+
+
+
